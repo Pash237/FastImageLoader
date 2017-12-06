@@ -19,7 +19,7 @@ class ViewController: UIViewController
 	
 	func loadImages()
 	{
-		let imageCount = 380
+		let imageCount = 300
 		var imageViews = Array<UIImageView>()
 		
 		for i in 0..<imageCount {

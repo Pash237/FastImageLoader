@@ -69,11 +69,6 @@ public class FastImageLoader
 	
 	public func savedImage(atPath path: String) -> UIImage?
 	{
-		//TODO: image sizes!
-		let width = 512
-		let height = 512
-		
-		let length = width * height * 4
 		let file = open(path, O_RDONLY)
 		defer {
 			close(file)
@@ -81,6 +76,18 @@ public class FastImageLoader
 		
 		if file < 0 {
 //			print("Could not open \(path)")
+			return nil
+		}
+		
+		var width: UInt32 = 0
+		var height: UInt32 = 0
+		fgetxattr(file, "width", &width, 4, 0, 0)
+		fgetxattr(file, "height", &height, 4, 0, 0)
+	
+		let length = Int(width * height * 4)
+		
+		guard length > 0 else {
+			print("Could not read dimensions of image at \(path)")
 			return nil
 		}
 		
@@ -93,7 +100,7 @@ public class FastImageLoader
 		let bitsPerComponent = 8
 		let bytesPerPixel = 4
 		let bitsPerPixel = bytesPerPixel * 8
-		let bytesPerRow = width * bytesPerPixel
+		let bytesPerRow = Int(width) * bytesPerPixel
 		let colorSpace = CGColorSpaceCreateDeviceRGB()
 		
 		guard let dataProvider = CGDataProvider(
@@ -107,8 +114,8 @@ public class FastImageLoader
 		}
 		
 		guard let cgImage = CGImage(
-				width: width,
-				height: height,
+				width: Int(width),
+				height: Int(height),
 				bitsPerComponent: bitsPerComponent,
 				bitsPerPixel: bitsPerPixel,
 				bytesPerRow: bytesPerRow,
@@ -140,6 +147,11 @@ public class FastImageLoader
 			
 			do {
 				try data.write(to: URL(fileURLWithPath: path))
+				
+				var width = UInt32(image.cgImage!.width)
+				var height = UInt32(image.cgImage!.height)
+				setxattr(path, "width", &width, 4, 0, 0)
+				setxattr(path, "height", &height, 4, 0, 0)
 			} catch {
 				print("Unable to write image data to \(path): \(error)")
 			}
