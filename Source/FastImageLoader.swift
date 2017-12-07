@@ -17,8 +17,6 @@ public class FastImageLoader
 	{
 		cache = NSCache<NSString, UIImage>()
 		cache.totalCostLimit = 10 * 1024 * 1024
-		
-		print("Caches URL: \(FastImageLoader.cachesPath)")
 	}
 	
 	public func purgeCache()
@@ -27,7 +25,7 @@ public class FastImageLoader
 		cache.removeAllObjects()
 		
 		//clear disk cache
-		let contents = (try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: FastImageLoader.cachesPath), includingPropertiesForKeys: nil)) ?? []
+		let contents = (try? FileManager.default.contentsOfDirectory(at: URL(fileURLWithPath: FastImageLoader.cachePath), includingPropertiesForKeys: nil)) ?? []
 		for url: URL in contents {
 			if url.lastPathComponent.hasPrefix("cached_image_") {
 				try? FileManager.default.removeItem(at: url)
@@ -156,11 +154,11 @@ public class FastImageLoader
 		}
 	}
 	
-	private static let cachesPath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].path
+	public static var cachePath = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].path
 	
 	private func cachePath(forName name: String) -> String
 	{
-		return "\(FastImageLoader.cachesPath)/cached_image_\(name).raw"
+		return "\(FastImageLoader.cachePath)/cached_image_\(name).raw"
 	}
 }
 
