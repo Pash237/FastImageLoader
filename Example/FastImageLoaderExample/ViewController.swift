@@ -33,7 +33,7 @@ class ViewController: UIViewController
 			imageViews.append(imageView)
 		}
 		
-		FastImageLoader.shared.purgeCache()
+		//FastImageLoader.shared.purgeCache()
 		
 		let start = CFAbsoluteTimeGetCurrent()
 		

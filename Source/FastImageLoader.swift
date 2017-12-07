@@ -38,15 +38,12 @@ public class FastImageLoader
 	public func loadImage(named name: String) -> UIImage?
 	{
 		if let cachedImage = cachedImage(named: name) {
-//			print("loading image \(name) from memory cache")
 			return cachedImage
 		} else
 		if let savedImage = savedImage(atPath: cachePath(forName: name)) {
-//			print("loading image \(name) from disk cache")
 			cache(image: savedImage, named: name)
 			return savedImage
 		} else {
-//			print("loading image \(name) using UIImage(named:)")
 			let image = UIImage(named: name)
 			if image != nil {
 				cache(image: image!, named: name)
@@ -75,27 +72,35 @@ public class FastImageLoader
 		}
 		
 		if file < 0 {
-//			print("Could not open \(path)")
 			return nil
 		}
 		
-		var width: UInt32 = 0
-		var height: UInt32 = 0
-		fgetxattr(file, "width", &width, 4, 0, 0)
-		fgetxattr(file, "height", &height, 4, 0, 0)
-	
+		//get file size
+		var fileStat = stat()
+		fstat(file, &fileStat);
+		let fileSize = Int(fileStat.st_size)
+		
+		//map file
+		let fileData = mmap(nil, fileSize, PROT_READ, MAP_FILE | MAP_PRIVATE, file, 0)
+		if fileData == nil || fileData == MAP_FAILED {
+			print("Could not mmap file to read \(path)")
+			return nil
+		}
+		
+		//first two ints are dimensions
+		let width: UInt32 = fileData!.load(fromByteOffset: 0, as: UInt32.self)
+		let height: UInt32 = fileData!.load(fromByteOffset: 4, as: UInt32.self)
+		
+		//the rest is pixel data
+		let pixelData = fileData!.advanced(by: 8)
+		
 		let length = Int(width * height * 4)
 		
 		guard length > 0 else {
-			print("Could not read dimensions of image at \(path)")
+			print("Zero dimensions of image at \(path)")
 			return nil
 		}
-		
-		guard let bytes = mmap(nil, length, PROT_READ, MAP_FILE | MAP_SHARED, file, 0) else {
-			print("Could not mmap file \(path)")
-			return nil
-		}
-		
+
 		let bitmapInfo = CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue)
 		let bitsPerComponent = 8
 		let bytesPerPixel = 4
@@ -105,7 +110,7 @@ public class FastImageLoader
 		
 		guard let dataProvider = CGDataProvider(
 				dataInfo: nil,
-				data: bytes, size: length, releaseData: { info, data, size in
+				data: pixelData, size: length, releaseData: { info, data, size in
 			//data is released automatically
 		}) else
 		{
@@ -136,25 +141,18 @@ public class FastImageLoader
 	private func save(image: UIImage, path: String)
 	{
 		saveQueue.async {
-			guard var pixels = image.pixelData() else {
-				print("Unable to get pixel data for \(path)")
-				return
+			let file = open(path, O_RDWR | O_CREAT | O_TRUNC, mode_t(0o600))
+			defer {
+				close(file)
 			}
 			
-			//print("Saving image \(name), \(pixels.count) bytes")
-			
-			let data = Data(bytes: &pixels, count: pixels.count)
-			
-			do {
-				try data.write(to: URL(fileURLWithPath: path))
-				
-				var width = UInt32(image.cgImage!.width)
-				var height = UInt32(image.cgImage!.height)
-				setxattr(path, "width", &width, 4, 0, 0)
-				setxattr(path, "height", &height, 4, 0, 0)
-			} catch {
-				print("Unable to write image data to \(path): \(error)")
-			}
+			var width = UInt32(image.cgImage!.width)
+			var height = UInt32(image.cgImage!.height)
+			let length = Int(width) * Int(height) * 4
+
+			write(file, &width, 4)
+			write(file, &height, 4)
+			write(file, image.pixelData(), length)
 		}
 	}
 	
@@ -179,11 +177,11 @@ extension UIImage
 			print("Unable to get pixel data (can't create CGImage)")
 			return nil
 		}
-		//print("getting pixel data for image \(cgImage.width)×\(cgImage.height)")
-		
+
 		let dataSize = cgImage.width * cgImage.height * 4
 		var pixelData = [UInt8](repeating: 0, count: Int(dataSize))
 		let colorSpace = CGColorSpaceCreateDeviceRGB()
+		
 		guard let context = CGContext(
 				data: &pixelData,
 				width: Int(cgImage.width),
