@@ -10,7 +10,7 @@ public class FastImageLoader
 {
 	public static let shared: FastImageLoader = FastImageLoader()
 	
-	private(set) var cache: NSCache<NSString, UIImage>
+	public private(set) var cache: NSCache<NSString, UIImage>
 	private let saveQueue = DispatchQueue(label: "FastImageLoaderSaveQueue", qos: .background)
 	
 	public init()
