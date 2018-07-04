@@ -16,7 +16,7 @@ public class FastImageLoader
 	public init()
 	{
 		cache = NSCache<NSString, UIImage>()
-		cache.totalCostLimit = 10 * 1024 * 1024
+		cache.totalCostLimit = 80 * 1024 * 1024
 	}
 	
 	public func purgeCache()
