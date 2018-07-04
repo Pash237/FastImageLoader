@@ -12,6 +12,7 @@ public class FastImageLoader
 	
 	public private(set) var cache: NSCache<NSString, UIImage>
 	private let saveQueue = DispatchQueue(label: "FastImageLoaderSaveQueue", qos: .background)
+	private var imagesInSaveQueue = Set<String>()
 	
 	public init()
 	{
@@ -151,6 +152,13 @@ public class FastImageLoader
 
 	private func save(image: UIImage, path: String)
 	{
+		if imagesInSaveQueue.contains(path) {
+			//this image is already in a queue to be saved
+			return
+		}
+		
+		imagesInSaveQueue.insert(path)
+		
 		saveQueue.async {
 			guard let pixelData = image.pixelData() else {
 				print("Unable to save pixel data")
@@ -169,9 +177,11 @@ public class FastImageLoader
 			write(file, &width, 4)
 			write(file, &height, 4)
 			write(file, pixelData, length)
-            
-            //write atomically
-            rename(path + ".tmp", path)
+			
+			//write atomically
+			rename(path + ".tmp", path)
+			
+			self.imagesInSaveQueue.remove(path)
 		}
 	}
 	
