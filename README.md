@@ -1,4 +1,6 @@
-[![CocoaPods Compatible](https://img.shields.io/cocoapods/v/FastImageLoader.svg)](https://cocoapods.org/pods/FastImageLoader) [![Build Status](http://img.shields.io/travis/Pash237/FastImageLoader/master.svg?style=flat)](https://travis-ci.org/Pash237/FastImageLoader)
+[![CocoaPods Compatible](https://img.shields.io/cocoapods/v/FastImageLoader.svg)](https://cocoapods.org/pods/FastImageLoader)
+[![License](https://img.shields.io/cocoapods/l/FastImageLoader.svg?style=flat)](http://cocoapods.org/pods/FastImageLoader)
+[![Platform](https://img.shields.io/cocoapods/p/FastImageLoader.svg?style=flat)](http://cocoapods.org/pods/FastImageLoader)
 
 # FastImageLoader
 Library to speed up subsequent `UIImage` loading (in the cost of disk space).  
@@ -20,6 +22,12 @@ It is a simple library. If you need something more fundamental, please try [Fast
 
 ## Usage
 
+Import the library in all files where you use it:
+
+```swift
+import FastImageLoader
+```
+
 ```swift
 imageView.image = FastImageLoader.shared.loadImage(named: "LovelyImage")
 ```
@@ -32,18 +40,6 @@ If you're using CocoaPods, just add this line to your Podfile:
 
 ```ruby
 pod 'FastImageLoader'
-```
-
-Install by running this command in your terminal:
-
-```sh
-pod install
-```
-
-Then import the library in all files where you use it:
-
-```swift
-import FastImageLoader
 ```
 
 ## License
