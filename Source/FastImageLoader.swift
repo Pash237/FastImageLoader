@@ -33,22 +33,36 @@ public class FastImageLoader
 		}
 	}
 	
+	public func preloadImage(named name: String)
+	{
+		if cachedImage(named: name) == nil {
+			if let savedImage = savedImage(atPath: cachePath(forName: name)) {
+				cache(image: savedImage, named: name)
+			} else {
+				if let image = UIImage(named: name) {
+					cache(image: image, named: name)
+					save(image: image, path: cachePath(forName: name))
+				}
+			}
+		}
+	}
+	
 	public func loadImage(named name: String) -> UIImage?
 	{
 		if let cachedImage = cachedImage(named: name) {
 			return cachedImage
-		} else
+		}
 		if let savedImage = savedImage(atPath: cachePath(forName: name)) {
 			cache(image: savedImage, named: name)
 			return savedImage
-		} else
+		}
 		if let image = UIImage(named: name) {
 			cache(image: image, named: name)
 			save(image: image, path: cachePath(forName: name))
-            return image
-		} else {
-			return nil
+			return image
 		}
+		
+		return nil
 	}
 	
 	public func cachedImage(named name: String) -> UIImage?
