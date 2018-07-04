@@ -143,7 +143,7 @@ public class FastImageLoader
 				return
 			}
 
-			let file = open(path, O_RDWR | O_CREAT | O_TRUNC, mode_t(0o600))
+			let file = open(path + ".tmp", O_RDWR | O_CREAT | O_TRUNC, mode_t(0o600))
 			defer {
 				close(file)
 			}
@@ -155,6 +155,9 @@ public class FastImageLoader
 			write(file, &width, 4)
 			write(file, &height, 4)
 			write(file, pixelData, length)
+            
+            //write atomically
+            rename(path + ".tmp", path)
 		}
 	}
 	
