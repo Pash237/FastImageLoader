@@ -41,14 +41,13 @@ public class FastImageLoader
 		if let savedImage = savedImage(atPath: cachePath(forName: name)) {
 			cache(image: savedImage, named: name)
 			return savedImage
+		} else
+		if let image = UIImage(named: name) {
+			cache(image: image, named: name)
+			save(image: image, path: cachePath(forName: name))
+            return image
 		} else {
-			let image = UIImage(named: name)
-			if image != nil {
-				cache(image: image!, named: name)
-				save(image: image!, path: cachePath(forName: name))
-			}
-			
-			return image
+			return nil
 		}
 	}
 	
@@ -139,6 +138,11 @@ public class FastImageLoader
 	private func save(image: UIImage, path: String)
 	{
 		saveQueue.async {
+			guard let pixelData = image.pixelData() else {
+				print("Unable to save pixel data")
+				return
+			}
+
 			let file = open(path, O_RDWR | O_CREAT | O_TRUNC, mode_t(0o600))
 			defer {
 				close(file)
@@ -150,7 +154,7 @@ public class FastImageLoader
 
 			write(file, &width, 4)
 			write(file, &height, 4)
-			write(file, image.pixelData(), length)
+			write(file, pixelData, length)
 		}
 	}
 	
@@ -177,6 +181,12 @@ extension UIImage
 		}
 
 		let dataSize = cgImage.width * cgImage.height * 4
+
+		guard dataSize > 0 else {
+			print("Unable to get pixel data (image size is \(cgImage.width)x\(cgImage.height))")
+			return nil
+		}
+
 		var pixelData = [UInt8](repeating: 0, count: Int(dataSize))
 		let colorSpace = CGColorSpaceCreateDeviceRGB()
 		
@@ -189,7 +199,7 @@ extension UIImage
 				space: colorSpace,
 				bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue) else
 		{
-			print("Unable to get pixel data from image (can't create context)")
+			print("Unable to get pixel data (can't create context)")
 			return nil
 		}
 		
